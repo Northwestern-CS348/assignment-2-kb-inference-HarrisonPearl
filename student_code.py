@@ -65,6 +65,7 @@ class KnowledgeBase(object):
                     ind = self.facts.index(fact_rule)
                     for f in fact_rule.supported_by:
                         self.facts[ind].supported_by.append(f)
+
                 else:
                     ind = self.facts.index(fact_rule)
                     self.facts[ind].asserted = True
@@ -78,6 +79,7 @@ class KnowledgeBase(object):
                     ind = self.rules.index(fact_rule)
                     for f in fact_rule.supported_by:
                         self.rules[ind].supported_by.append(f)
+
                 else:
                     ind = self.rules.index(fact_rule)
                     self.rules[ind].asserted = True
@@ -138,29 +140,33 @@ class KnowledgeBase(object):
         if isinstance(fact_rule, Fact):
             if not fact_rule.supported_by and not fact_rule.asserted:
                 for r in fact_rule.supports_rules:
-                    for p in r.supported_by:
+                    for p in self._get_rule(r).supported_by:
                         if p[0].statement == fact_rule.statement:
-                            r.supported_by.remove(p)
-                    self.kb_retract_recursive(r)
+                            self._get_rule(r).supported_by.remove(p)
+                    self.kb_retract_recursive(self._get_rule(r))
                 for f in fact_rule.supports_facts:
-                    for p in f.supported_by:
+                    for p in self._get_fact(f).supported_by:
                         if p[0].statement == fact_rule.statement:
-                            f.supported_by.remove(p)
-                    self.kb_retract_recursive(f)
-                self.facts.remove(fact_rule)
+                            self._get_fact(f).supported_by.remove(p)
+                    self.kb_retract_recursive(self._get_fact(f))
+                self.facts.remove(self._get_fact(fact_rule))
         if isinstance(fact_rule, Rule):
             if not fact_rule.supported_by and not fact_rule.asserted:
                 for r in fact_rule.supports_rules:
-                    for p in r.supported_by:
+                    for p in self._get_rule(r).supported_by:
                         if p[1] == fact_rule:
-                            r.supported_by.remove(p)
-                    self.kb_retract_recursive(r)
+                            self._get_rule(r).supported_by.remove(p)
+                    self.kb_retract_recursive(self._get_rule(r))
                 for f in fact_rule.supports_facts:
-                    for p in f.supported_by:
+                    for p in self._get_fact(f).supported_by:
                         if p[1] == fact_rule:
-                            f.supported_by.remove(p)
-                    self.kb_retract_recursive(f)
-                self.rules.remove(fact_rule)
+                            self._get_fact(f).supported_by.remove(p)
+                    self.kb_retract_recursive(self._get_fact(f))
+                self.rules.remove(self._get_rule(fact_rule))
+
+
+
+
 
 
 
@@ -189,33 +195,21 @@ class InferenceEngine(object):
 
         # examine each rule in our KB, and check the first element of its LHS against this new fact
         if isinstance(fact, Fact) and isinstance(rule, Rule):
-            # match with constant found
-            if fact.statement == rule.lhs[0]:
-                if len(rule.lhs) == 1:
-                    kb.kb_assert(Fact(rule.rhs), [fact, rule])
-                elif len(rule.lhs) > 1:
-                    nrule = lc.Rule([rule.lhs[1:], rule.rhs], [(fact, rule)])
-                    nrule.asserted = False
-                    rule.supports_rules.append(nrule)
-                    fact.supports_rules.append(nrule)
-                    kb.kb_assert(nrule)
 
-            # match with variable found
             b = match(fact.statement, rule.lhs[0])
             if b:
                 if len(rule.lhs) > 1:
                     nlhs = []
-                    iterlhs = iter(rule.lhs)
-                    next(iterlhs)
-                    for S in iterlhs:
+                    srule = rule.lhs[1:]
+                    for S in srule:
                         nlhs.append(instantiate(S, b))
-                    nrule = lc.Rule([nlhs, instantiate(rule.rhs, b)], [(fact, rule)])
+                    nrule = Rule([nlhs, instantiate(rule.rhs, b)], [(fact, rule)])
                     nrule.asserted = False
                     rule.supports_rules.append(nrule)
                     fact.supports_rules.append(nrule)
                     kb.kb_assert(nrule)
                 elif len(rule.lhs) == 1:
-                    nfact = lc.Fact(instantiate(rule.rhs, b), [(fact, rule)])
+                    nfact = Fact(instantiate(rule.rhs, b), [(fact, rule)])
                     nfact.asserted = False
                     rule.supports_facts.append(nfact)
                     fact.supports_facts.append(nfact)
