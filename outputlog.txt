@@ -1,0 +1,16 @@
+TESTS WITH ERRORS 
+test14 (gradingtests.UnitTests)
+Traceback (most recent call last):
+  File "/Users/k2i/academics/automatedgradingapp/app/testing/kb-inference/gradingtests.py", line 405, in test14
+    KB.kb_retract(fact2)
+  File "/Users/k2i/academics/automatedgradingapp/app/testing/kb-inference/student_code.py", line 137, in kb_retract
+    self.kb_retract_recursive(self.facts[ind])
+  File "/Users/k2i/academics/automatedgradingapp/app/testing/kb-inference/student_code.py", line 148, in kb_retract_recursive
+    for p in self._get_fact(f).supported_by:
+AttributeError: 'NoneType' object has no attribute 'supported_by'
+
+-------------------------------
+TESTS FAILED  
+-------------------------------
+TESTS SKIPPED 
+-------------------------------
